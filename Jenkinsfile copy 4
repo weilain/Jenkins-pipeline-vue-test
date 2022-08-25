@@ -1,0 +1,58 @@
+pipeline {
+  agent {
+    kubernetes {
+      // 这里就是继承
+      inheritFrom 'jenkins-slave-temp'
+      yaml '''
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          labels:
+            jenkins: slave-docker
+        spec:
+          containers:
+          - name: maven
+            image: maven:alpine
+            command:
+            - cat
+            tty: true
+          - name: golang
+            image: golang:1.16.5
+            command:
+            - sleep
+            args:
+            - 99d
+        '''
+    }
+  }
+  stages {
+    stage('查看 java 版本'){
+      steps {
+        container('jnlp') {
+          sh 'id;java -version'
+        }
+      }
+    }
+    stage('查看 golang 版本'){
+      steps {
+        container('golang') {
+          sh 'go version'
+        }
+      }
+    }
+    stage('查看 maven 版本') {
+      steps {
+        container('maven') {
+          sh 'id;mvn -version > maven'
+        }
+      }
+    }
+    stage('构建镜像'){
+      steps {
+        container('docker') {
+          sh 'id;docker info > docker'
+        }
+      }
+    }
+  }
+}

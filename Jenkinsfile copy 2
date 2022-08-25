@@ -1,0 +1,77 @@
+pipeline{
+    agent {
+        kubernetes {
+            yaml '''
+apiVersion: v1
+kind: Pod
+metadata:
+  name: jenkins-slave
+  namespace: jenkins
+spec:
+  containers:
+  - name: jnlp
+    image: harbor.k8s.com/k8s/jenkins-agent-dind:latest
+    securityContext:
+      privileged: true
+    workingDir: /home/jenkins/agent
+    volumeMounts:
+      - mountPath: /home/jenkins/agent
+        name: workspace-volume
+      - mountPath: /lib/modules
+        name: lib-modules
+        readOnly: true
+      - mountPath: /sys/fs/cgroup
+        name: sys-fs-cgroup
+  hostNetwork: false
+  automountServiceAccountToken: false
+  enableServiceLinks: false
+  dnsPolicy: Default
+  restartPolicy: Never
+  terminationGracePeriodSeconds: 60
+  volumes:
+    - name: workspace-volume
+      emptyDir: {}
+    - name: lib-modules
+      hostPath:
+        path: /lib/modules
+        type: Directory
+    - name: sys-fs-cgroup
+      hostPath:
+        path: /sys/fs/cgroup
+        type: Directory
+
+'''
+        }
+    }
+    environment {
+        branchName = sh(returnStdout: true, script: "echo ${GIT_BRANCH} | sed 's/origin\\///g'").trim()
+        pkgInfo = readJSON file: 'package.json'
+        pkgName = "${pkgInfo.name}"
+        commitId = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+        imageTag = "${branchName}-${commitId}"
+        imageName = "harbor.k8s.com/k8s/${pkgName}:${imageTag}"
+    }
+    stages{
+        stage("Build Image"){
+            steps {
+                retry(3){
+                    script{
+                        appImage = docker.build("${imageName}")
+                    }
+                }
+            }
+        }
+        stage("Push Image"){
+            steps {
+                retry(3){
+                    script{
+                        docker.withRegistry('https://harbor.k8s.com/v2', 'robot_k8s') {
+                            appImage.push()
+                            appImage.push('latest')
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

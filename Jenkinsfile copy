@@ -1,0 +1,62 @@
+pipeline {
+    agent {
+        kubernetes {
+            yaml '''
+apiVersion: v1
+kind: Pod
+metadata:
+  name: jenkins-slave
+  namespace: jenkins
+spec:
+  containers:
+  - name: jnlp
+    image: jenkins/inbound-agent:latest
+    securityContext:
+      runAsUser: 0
+    volumeMounts:
+    - mountPath: /var/run/docker.sock
+      name: docker-sock
+      readOnly: true
+   volumes:
+   - hostPath:
+        path: /var/run/docker.sock
+        type: ""
+        name: docker-sock
+
+'''
+        }
+    }
+parameters {
+    // 选择分支发布
+    gitParameter branchFilter: 'origin/(.*)', defaultValue: 'master', name: 'BRANCH', type: 'PT_BRANCH', listSize: '25'
+}
+
+stages {
+    stage('Git pull') {
+        steps {
+            // 下载代码
+            git credentialsId: '1639462c-7254-497a-b352-0fba485a0fcb', branch: "${params.BRANCH}", url: 'http://git.klvchen.com/klvchen/klvchen_vue.git'
+        }
+    }
+    
+    stage('Build') {
+        steps {
+            nodejs(nodeJSInstallationName: 'NodeJS 14.11.0', configId: '92a915c5-1e3b-4003-9334-5dd9e6127bb8') {
+                // npm 编译安装
+                sh 'npm install && npm run build'
+            }
+        }
+    }
+    
+    stage('Deploy') {
+        steps {                                 
+            // 把编译好的 dist 传输到 192.168.0.2 服务器上              
+            withCredentials([sshUserPrivateKey(credentialsId: 'cb9d8a50-0141-4316-97df-8da33e5a3ab0', keyFileVariable: 'pem')]) {
+                sh '''
+                   scp -i ${pem} -o "StrictHostKeyChecking=no" -r dist root@192.168.0.2:/data/klvchen_project/
+                '''
+            }
+        }
+    }
+}
+}
