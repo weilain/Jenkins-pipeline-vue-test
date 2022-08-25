@@ -123,4 +123,106 @@ pipeline {
       }
     }
   }
+  post{
+
+     success{
+
+        emailext to:'957488199@qq.com,shenzhuang@aliyun.com',
+        subject:"'SUCCESSFUL: Job ${env.JOB_NAME} [${env.BUILD_NUMBER}]' 更新正常",
+        body:'''<!DOCTYPE html>
+                  <html>
+                  <head>
+                  <meta charset="UTF-8">
+                  <title>${ENV, var="JOB_NAME"}-第${BUILD_NUMBER}次构建日志</title>
+                  </head>
+                  <body leftmargin="8" marginwidth="0" topmargin="8" marginheight="4"
+                      offset="0">
+                      <table width="95%" cellpadding="0" cellspacing="0"  style="font-size: 11pt; font-family: Tahoma, Arial, Helvetica, sans-serif">
+                          <tr>
+                              <td>此次项目构建<strong>成功</strong>，大家好，以下为${PROJECT_NAME }项目构建信息</td>
+                          </tr>
+                          <tr>
+                              <td><br />
+                              <b><font color="#0B610B">构建信息</font></b>
+                              <hr size="2" width="100%" align="center" /></td>
+                          </tr>
+                          <tr>
+                              <td>
+                                  <ul>
+                                      <li>项目名称 ： ${PROJECT_NAME}</li>
+                                      <li>构建编号 ： 第${BUILD_NUMBER}次构建</li>
+                                      <li>触发原因： ${CAUSE}</li>
+                                      <li>构建状态： ${BUILD_STATUS}</li>
+                                      <li>构建日志： <a href="${BUILD_URL}console">${BUILD_URL}console</a></li>
+                                      <li>构建  Url ： <a href="${BUILD_URL}">${BUILD_URL}</a></li>
+                                      <li>工作目录 ： <a href="${PROJECT_URL}ws">${PROJECT_URL}ws</a></li>
+                                      <li>项目  Url ： <a href="${PROJECT_URL}">${PROJECT_URL}</a></li>
+                                  </ul>
+                              </td>
+                          </tr>
+                          <tr>
+                              <td><b><font color="#0B610B">历史变更记录:</font></b>
+                              <hr size="2" width="100%" align="center" /></td>
+                          </tr>
+                          <tr>
+                              <td>
+                                  ${CHANGES_SINCE_LAST_SUCCESS,reverse=true, format="Changes for Build #%n:<br />%c<br />",showPaths=true,changesFormat="<pre>[%a]<br />%m</pre>",pathFormat="&nbsp;&nbsp;&nbsp;&nbsp;%p"}
+                              </td>
+                          </tr>
+                      </table>
+                  </body>
+                  </html> '''
+
+    }
+
+    failure{
+
+        emailext to:'957488199@qq.com,shenzhuang@aliyun.com,18254090527@163.com,17621621226@126.com',
+        subject:"'FAILED: Job ${env.JOB_NAME} [${env.BUILD_NUMBER}]' 更新失败",
+        body:''' <!DOCTYPE html>
+          <html>
+          <head>
+          <meta charset="UTF-8">
+          <title>${ENV, var="JOB_NAME"}-第${BUILD_NUMBER}次构建日志</title>
+          </head>
+          <body leftmargin="8" marginwidth="0" topmargin="8" marginheight="4"
+              offset="0">
+              <table width="95%" cellpadding="0" cellspacing="0"  style="font-size: 11pt; font-family: Tahoma, Arial, Helvetica, sans-serif">
+                  <tr>
+                      <td>大家好，很不幸，此次项目构建<strong>失败</strong> ，以下为${PROJECT_NAME }项目构建信息</td>
+                  </tr>
+                  <tr>
+                      <td><br />
+                      <b><font color="#0B610B">构建信息</font></b>
+                      <hr size="2" width="100%" align="center" /></td>
+                  </tr>
+                  <tr>
+                      <td>
+                          <ul>
+                              <li>项目名称 ： ${PROJECT_NAME}</li>
+                              <li>构建编号 ： 第${BUILD_NUMBER}次构建</li>
+                              <li>触发原因： ${CAUSE}</li>
+                              <li>构建状态： ${BUILD_STATUS}</li>
+                              <li>构建日志： <a href="${BUILD_URL}console">${BUILD_URL}console</a></li>
+                              <li>构建  Url ： <a href="${BUILD_URL}">${BUILD_URL}</a></li>
+                              <li>工作目录 ： <a href="${PROJECT_URL}ws">${PROJECT_URL}ws</a></li>
+                              <li>项目  Url ： <a href="${PROJECT_URL}">${PROJECT_URL}</a></li>
+                          </ul>
+                      </td>
+                  </tr>
+                  <tr>
+                      <td><b><font color="#0B610B">历史变更记录:</font></b>
+                      <hr size="2" width="100%" align="center" /></td>
+                  </tr>
+                  <tr>
+                      <td>
+                          ${CHANGES_SINCE_LAST_SUCCESS,reverse=true, format="Changes for Build #%n:<br />%c<br />",showPaths=true,changesFormat="<pre>[%a]<br />%m</pre>",pathFormat="&nbsp;&nbsp;&nbsp;&nbsp;%p"}
+                      </td>
+                  </tr>
+              </table>
+          </body>
+          </html> '''
+    }
+
+  }
 }
